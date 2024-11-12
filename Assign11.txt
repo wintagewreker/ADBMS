@@ -1,0 +1,39 @@
+// Switch to the groceryShop database
+use groceryShop
+
+// Insert Products data into the 'products' collection
+db.products.insertMany([
+  { "_id": 1, "product_name": "Apple", "category": "Fruits", "price": 30 },
+  { "_id": 2, "product_name": "Banana", "category": "Fruits", "price": 15 },
+  { "_id": 3, "product_name": "Carrot", "category": "Vegetables", "price": 20 },
+  { "_id": 4, "product_name": "Cucumber", "category": "Vegetables", "price": 25 }
+])
+
+// Insert Sales data into the 'sales' collection
+db.sales.insertMany([
+  { "sale_id": 1, "product_id": 1, "quantity": 5, "total": 150, "date": ISODate("2024-11-01T10:00:00Z"), "customer_id": 101 },
+  { "sale_id": 2, "product_id": 2, "quantity": 10, "total": 150, "date": ISODate("2024-11-02T11:00:00Z"), "customer_id": 102 },
+  { "sale_id": 3, "product_id": 3, "quantity": 7, "total": 140, "date": ISODate("2024-11-02T12:00:00Z"), "customer_id": 101 },
+  { "sale_id": 4, "product_id": 4, "quantity": 3, "total": 75, "date": ISODate("2024-11-03T13:00:00Z"), "customer_id": 103 }
+])
+
+// 1. Create an index on the 'product_name' field in the 'products' collection (Single Field Index)
+db.products.createIndex({ "product_name": 1 })
+
+// 2. Create a compound index on 'category' and 'price' fields in the 'products' collection
+db.products.createIndex({ "category": 1, "price": 1 })
+
+// 3. Create a text index on the 'product_name' field (Full-Text Search)
+db.products.createIndex({ "product_name": "text" })
+
+// 4. Drop all indexes in the 'products' collection (except the default _id index)
+db.products.dropIndexes()
+
+// 5. Show all indexes in the 'products' collection
+db.products.getIndexes()
+
+// 6. Drop the compound index on 'category' and 'price' fields
+db.products.dropIndex({ "category": 1, "price": 1 })
+
+// 7. Create a geospatial index on a 'location' field (optional step if location data is available)
+db.products.createIndex({ "location": "2dsphere" })

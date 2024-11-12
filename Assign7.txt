@@ -1,0 +1,309 @@
+// ------------------------------
+// Setup and Insert Sample Data into Collections
+// ------------------------------
+
+use collegeDB;
+
+// Insert sample students into the "Student" collection
+db.Student.insertMany([
+  { Roll_no: 1, Name: "Alice", Address: "123 Maple St" },
+  { Roll_no: 2, Name: "Bob", Address: "456 Oak St" },
+  { Roll_no: 3, Name: "Charlie", Address: "789 Pine St" }
+]);
+
+// Insert sample subjects into the "Subject" collection
+db.Subject.insertMany([
+  { sub_code: "CS101", sub_name: "Data Structures" },
+  { sub_code: "CS102", sub_name: "DBMS" },
+  { sub_code: "CS103", sub_name: "Networks" }
+]);
+
+// Insert sample marks into the "Marks" collection
+db.Marks.insertMany([
+  { Roll_no: 1, sub_code: "CS101", marks: 85 },
+  { Roll_no: 1, sub_code: "CS102", marks: 45 },
+  { Roll_no: 1, sub_code: "CS103", marks: 78 },
+  { Roll_no: 2, sub_code: "CS101", marks: 55 },
+  { Roll_no: 2, sub_code: "CS102", marks: 38 },
+  { Roll_no: 2, sub_code: "CS103", marks: 65 },
+  { Roll_no: 3, sub_code: "CS101", marks: 92 },
+  { Roll_no: 3, sub_code: "CS102", marks: 70 },
+  { Roll_no: 3, sub_code: "CS103", marks: 80 }
+]);
+
+// ------------------------------
+// Query 1: Find Average Marks of Each Student, Along with the Name of Student
+// ------------------------------
+db.Marks.aggregate([
+  {
+    // Join Marks collection with Student collection on Roll_no
+    $lookup: {
+      from: "Student",
+      localField: "Roll_no",
+      foreignField: "Roll_no",
+      as: "studentInfo"
+    }
+  },
+  { $unwind: "$studentInfo" },  // Flatten the resulting array from $lookup
+  {
+    // Group by Roll_no and calculate average marks
+    $group: {
+      _id: "$Roll_no",
+      name: { $first: "$studentInfo.Name" },
+      averageMarks: { $avg: "$marks" }
+    }
+  }
+]);
+
+// ------------------------------
+// Query 2: Find How Many Students Have Failed in the Subject "DBMS"
+// ------------------------------
+db.Marks.aggregate([
+  {
+    // Join Marks collection with Subject collection on sub_code
+    $lookup: {
+      from: "Subject",
+      localField: "sub_code",
+      foreignField: "sub_code",
+      as: "subjectInfo"
+    }
+  },
+  { $unwind: "$subjectInfo" },  // Flatten the resulting array from $lookup
+  { 
+    // Filter students who failed in DBMS (marks < 40)
+    $match: { "subjectInfo.sub_name": "DBMS", marks: { $lt: 40 } }
+  },
+  {
+    // Count the number of failed students
+    $count: "failedStudents"
+  }
+]);
+
+// ------------------------------
+// Query 3: List Out Top 10 Students Based on Total Marks
+// ------------------------------
+db.Marks.aggregate([
+  {
+    // Group by Roll_no and calculate total marks for each student
+    $group: {
+      _id: "$Roll_no",
+      totalMarks: { $sum: "$marks" }
+    }
+  },
+  {
+    // Join the aggregated data with the Student collection to get student names
+    $lookup: {
+      from: "Student",
+      localField: "_id",
+      foreignField: "Roll_no",
+      as: "studentInfo"
+    }
+  },
+  { $unwind: "$studentInfo" },  // Flatten the resulting array from $lookup
+  {
+    // Sort the students by totalMarks in descending order
+    $sort: { totalMarks: -1 }
+  },
+  {
+    // Limit the result to the top 10 students
+    $limit: 10
+  },
+  {
+    // Project the desired fields (name and totalMarks) and exclude the _id field
+    $project: { _id: 0, name: "$studentInfo.Name", totalMarks: 1 }
+  }
+]);
+
+// ------------------------------
+// Additional Example Queries: Check the Data and Create Indexes
+// ------------------------------
+
+// Create an index on the "name" field of the "Student" collection to optimize queries
+db.Student.createIndex({ name: 1 });
+
+// Verify the index has been created
+db.Student.getIndexes();
+
+
+// ------------------------------
+// Extended Queries for Additional Questions
+// ------------------------------
+
+// 4. List Out 10 Lowest Failing Students (based on total marks and failed subjects)
+db.Marks.aggregate([
+  {
+    // Group by Roll_no and calculate total marks for each student
+    $group: {
+      _id: "$Roll_no",
+      totalMarks: { $sum: "$marks" },
+      failedSubjects: {
+        $sum: { $cond: [{ $lt: ["$marks", 40] }, 1, 0] } // Count failed subjects (marks < 40)
+      }
+    }
+  },
+  {
+    // Filter only students who have failed at least one subject
+    $match: { failedSubjects: { $gt: 0 } }
+  },
+  {
+    // Sort by total marks in ascending order (lowest first)
+    $sort: { totalMarks: 1 }
+  },
+  {
+    // Limit the result to the bottom 10 students
+    $limit: 10
+  },
+  {
+    // Join the data with the "Student" collection to get student names
+    $lookup: {
+      from: "Student",
+      localField: "_id",
+      foreignField: "Roll_no",
+      as: "studentInfo"
+    }
+  },
+  { $unwind: "$studentInfo" },  // Flatten the resulting array from $lookup
+  {
+    // Project the necessary fields (name, totalMarks, and failedSubjects)
+    $project: { _id: 0, name: "$studentInfo.Name", totalMarks: 1, failedSubjects: 1 }
+  }
+]);
+
+// 5. Find the Entire Student Who Got Fail in 1 Theory Subject
+db.Marks.aggregate([
+  {
+    // Group by Roll_no and count the number of failed subjects (marks < 40)
+    $group: {
+      _id: "$Roll_no",
+      failedSubjects: {
+        $sum: { $cond: [{ $lt: ["$marks", 40] }, 1, 0] }
+      }
+    }
+  },
+  {
+    // Filter for students who have exactly 1 failed subject
+    $match: { failedSubjects: 1 }
+  },
+  {
+    // Join the data with the "Student" collection to get the full student details
+    $lookup: {
+      from: "Student",
+      localField: "_id",
+      foreignField: "Roll_no",
+      as: "studentInfo"
+    }
+  },
+  { $unwind: "$studentInfo" },  // Flatten the resulting array from $lookup
+  {
+    // Project the necessary fields (student details)
+    $project: { _id: 0, Roll_no: "$_id", name: "$studentInfo.Name", address: "$studentInfo.Address" }
+  }
+]);
+
+// 6. List Out the Students Who Live in Pune City
+db.Student.aggregate([
+  {
+    // Match students who live in Pune city
+    $match: { Address: /Pune/ }
+  },
+  {
+    // Project only the Roll_no and Name of students living in Pune
+    $project: { _id: 0, Roll_no: 1, Name: 1, Address: 1 }
+  }
+]);
+
+// 7. Find the Subject Toppers (Student with highest marks in each subject)
+db.Marks.aggregate([
+  {
+    // Group by subject code and find the highest marks for each subject
+    $group: {
+      _id: "$sub_code",
+      highestMarks: { $max: "$marks" }
+    }
+  },
+  {
+    // Join with the "Subject" collection to get subject names
+    $lookup: {
+      from: "Subject",
+      localField: "_id",
+      foreignField: "sub_code",
+      as: "subjectInfo"
+    }
+  },
+  { $unwind: "$subjectInfo" },  // Flatten the resulting array from $lookup
+  {
+    // Join with the "Marks" collection to get the student(s) with the highest marks
+    $lookup: {
+      from: "Marks",
+      localField: "_id",
+      foreignField: "sub_code",
+      as: "topStudents"
+    }
+  },
+  {
+    // Filter to get only students who have the highest marks in the subject
+    $unwind: "$topStudents"
+  },
+  {
+    // Match to ensure we only get the student(s) with the highest marks
+    $match: { "topStudents.marks": "$highestMarks" }
+  },
+  {
+    // Project the desired fields (subject name, student name, and marks)
+    $project: {
+      _id: 0,
+      subject: "$subjectInfo.sub_name",
+      studentName: "$topStudents.Roll_no",
+      marks: "$topStudents.marks"
+    }
+  }
+]);
+
+// 8. Find the Students with Lowest Marks in Each Subject
+db.Marks.aggregate([
+  {
+    // Group by subject code and find the lowest marks for each subject
+    $group: {
+      _id: "$sub_code",
+      lowestMarks: { $min: "$marks" }
+    }
+  },
+  {
+    // Join with the "Subject" collection to get subject names
+    $lookup: {
+      from: "Subject",
+      localField: "_id",
+      foreignField: "sub_code",
+      as: "subjectInfo"
+    }
+  },
+  { $unwind: "$subjectInfo" },  // Flatten the resulting array from $lookup
+  {
+    // Join with the "Marks" collection to get the student(s) with the lowest marks
+    $lookup: {
+      from: "Marks",
+      localField: "_id",
+      foreignField: "sub_code",
+      as: "lowestStudents"
+    }
+  },
+  {
+    // Filter to get only students who have the lowest marks in the subject
+    $unwind: "$lowestStudents"
+  },
+  {
+    // Match to ensure we only get the student(s) with the lowest marks
+    $match: { "lowestStudents.marks": "$lowestMarks" }
+  },
+  {
+    // Project the desired fields (subject name, student name, and marks)
+    $project: {
+      _id: 0,
+      subject: "$subjectInfo.sub_name",
+      studentName: "$lowestStudents.Roll_no",
+      marks: "$lowestStudents.marks"
+    }
+  }
+]);
+
+

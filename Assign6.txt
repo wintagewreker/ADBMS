@@ -1,0 +1,83 @@
+// ------------------------------
+// Sample Data for Friends Collection
+// ------------------------------
+use socialDB;
+
+db.friends.insertMany([
+  { name: "Alice", age: 27 },
+  { name: "Bob", age: 35 },
+  { name: "Charlie", age: 32 },
+  { name: "David", age: 40 },
+  { name: "Alice", age: 29 }
+]);
+
+// ------------------------------
+// Create an Index on the "name" Field
+// ------------------------------
+db.friends.createIndex({ name: 1 });
+
+// Verify the index
+db.friends.getIndexes();
+
+====================================================
+
+
+// ------------------------------
+// Aggregation Examples
+// ------------------------------
+
+// i. $match: Filter friends who are "Alice"
+db.friends.aggregate([
+  { $match: { name: "Alice" } }
+]);
+
+// ii. $group: Group by "name" and get the average age of each name group
+db.friends.aggregate([
+  { $group: { _id: "$name", averageAge: { $avg: "$age" } } }
+]);
+
+// iii. $sort: Sort the results by "age" in descending order
+db.friends.aggregate([
+  { $sort: { age: -1 } }
+]);
+
+// iv. $project: Select only "name" and "age" fields, and create a new field "ageCategory"
+db.friends.aggregate([
+  { $project: { name: 1, age: 1, ageCategory: { $cond: { if: { $gte: ["$age", 30] }, then: "30+", else: "Under 30" } } } }
+]);
+
+// v. $limit: Limit the results to 3 documents
+db.friends.aggregate([
+  { $limit: 3 }
+]);
+
+// vi. $skip: Skip the first document and return the rest
+db.friends.aggregate([
+  { $skip: 1 }
+]);
+
+// vii. $count: Count the number of friends named "Alice"
+db.friends.aggregate([
+  { $match: { name: "Alice" } },
+  { $count: "totalCount" }
+]);
+
+// viii. $unwind: Unwind an array field (for demonstration, assume a friends array)
+db.friends.updateOne({ name: "Alice" }, { $set: { friends: ["Bob", "Charlie"] } });
+db.friends.aggregate([
+  { $unwind: "$friends" }
+]);
+
+// ix. $addFields: Add a new field "doubleAge" to each document, which is twice the "age" field
+db.friends.aggregate([
+  { $addFields: { doubleAge: { $multiply: ["$age", 2] } } }
+]);
+
+// x. $lookup: Perform a join with another collection, assuming there’s a "cities" collection
+db.cities.insertMany([
+  { city: "New York", resident: "Alice" },
+  { city: "Los Angeles", resident: "Bob" }
+]);
+db.friends.aggregate([
+  { $lookup: { from: "cities", localField: "name", foreignField: "resident", as: "residence" } }
+]);

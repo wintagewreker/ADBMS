@@ -1,0 +1,41 @@
+// ------------------------------
+// Sample Data for Employees Collection
+// ------------------------------
+use companyDB;
+
+db.Employees.insertMany([
+  { _id: 1, name: "John", age: 28, salary: 50000, bonus: 5000 },
+  { _id: 2, name: "Alice", age: 32, salary: 60000, bonus: 6000 },
+  { _id: 3, name: "Bob", age: 25, salary: 50000, bonus: 5000 },
+  { _id: 4, name: "Carol", age: 29, salary: 70000, bonus: 5000 },
+  { _id: 5, name: "Eve", age: 40, salary: 80000, bonus: 5000 },
+  { _id: 6, name: "Dan", age: 30, salary: 50000, bonus: 6000 }
+]);
+
+// ------------------------------
+// Queries Demonstrating $where, Cursors, and Commands
+// ------------------------------
+
+// 1. $where Query: Find documents where "salary" equals "bonus"
+db.Employees.find({ $where: "this.salary === this.bonus" });
+
+// 2. $where Query: Find documents where "age" is equal to "salary" / 2000
+db.Employees.find({ $where: "this.age === this.salary / 2000" });
+
+// 3. Cursor - Sort and Limit: Sort Employees by "salary" in descending order, limit results to 3
+db.Employees.find().sort({ salary: -1 }).limit(3);
+
+// 4. Cursor - Skip and Sort: Skip the first 2 Employees and then sort by "age" in ascending order
+db.Employees.find().skip(2).sort({ age: 1 });
+
+// 5. Cursor with JavaScript Loop: Assign query results to variable 'myEmployee' for Employees with "_id" > 2 and iterate
+var myEmployee = db.Employees.find({ _id: { $gt: 2 } });
+myEmployee.forEach(doc => printjson(doc));
+
+// 6. Check number of documents affected by an update operation
+db.Employees.updateMany({ bonus: 5000 }, { $set: { bonus: 7000 } });
+print("Number of documents updated:", db.Employees.find({ bonus: 7000 }).count());
+
+// 7. Drop the Employees collection
+db.Employees.drop();
+print("Employees collection dropped.");

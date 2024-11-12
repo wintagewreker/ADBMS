@@ -1,0 +1,38 @@
+// ------------------------------
+// Sample Data for Orders Collection
+// ------------------------------
+use salesDB;
+
+db.orders.insertMany([
+  { cust_id: "C001", price: 100 },
+  { cust_id: "C002", price: 200 },
+  { cust_id: "C001", price: 150 },
+  { cust_id: "C003", price: 250 },
+  { cust_id: "C002", price: 300 },
+  { cust_id: "C001", price: 50 },
+  { cust_id: "C003", price: 100 }
+]);
+
+// ------------------------------
+// MapReduce Operation
+// ------------------------------
+
+// Define the Map function to emit cust_id and price for each document
+var mapFunction1 = function() {
+  emit(this.cust_id, this.price);
+};
+
+// Define the Reduce function to sum up the price values for each cust_id
+var reduceFunction1 = function(keyCustId, valuesPrices) {
+  return Array.sum(valuesPrices);
+};
+
+// Execute the MapReduce on the orders collection
+db.orders.mapReduce(
+  mapFunction1,
+  reduceFunction1,
+  { out: "map_example" }
+);
+
+// View the MapReduce results
+db.map_example.find();

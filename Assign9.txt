@@ -1,0 +1,48 @@
+// Create and switch to the employeeDB database
+use employeeDB
+
+// Create the employees collection
+db.createCollection("employees")
+
+// a) Insert and save documents (single and multiple)
+db.employees.insertOne({
+  "emp_id": 101,
+  "name": "Alice",
+  "age": 28,
+  "salary": 35000,
+  "department": "HR",
+  "address": "123 Main St, Pune",
+  "status": "Active"
+});
+
+db.employees.insertMany([
+  { "emp_id": 102, "name": "Bob", "age": 30, "salary": 28000, "department": "Finance", "address": "456 Elm St, Pune", "status": "Active" },
+  { "emp_id": 103, "name": "Charlie", "age": 25, "salary": 25000, "department": "IT", "address": "789 Oak St, Pune", "status": "Active" },
+  { "emp_id": 104, "name": "David", "age": 35, "salary": 42000, "department": "Marketing", "address": "101 Pine St, Pune", "status": "Inactive" },
+  { "emp_id": 105, "name": "Eve", "age": 27, "salary": 27000, "department": "Sales", "address": "202 Maple St, Pune", "status": "Active" }
+]);
+
+// b) Update a document (update salary and department of Bob)
+db.employees.updateOne(
+  { "emp_id": 102 },
+  { $set: { "salary": 30000, "department": "Operations" } }
+);
+
+// c) Upsert the email ID of employee (update Charlie's email)
+db.employees.updateOne(
+  { "emp_id": 103 }, 
+  { $set: { "email": "charlie@example.com" } },
+  { upsert: true }  // Upsert will add email if it doesn't exist
+);
+
+// d) Update multiple documents (set new department for employees with salary < 30,000)
+db.employees.updateMany(
+  { "salary": { $lt: 30000 } },
+  { $set: { "department": "Junior Staff" } }
+);
+
+// e) Find employees with salary < 30,000
+db.employees.find({ "salary": { $lt: 30000 } });
+
+// f) Print employee names in ascending order
+db.employees.find().sort({ "name": 1 });

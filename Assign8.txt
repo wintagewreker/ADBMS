@@ -1,0 +1,50 @@
+// Create and switch to the studentDB database
+use studentDB
+
+// Create the students collection
+db.createCollection("students")
+
+// a) Insert and save documents (single and multiple)
+db.students.insertOne({
+  "roll_no": 1,
+  "name": "Alice",
+  "age": 22,
+  "marks": 75,
+  "address": "123 Main St, Pune",
+  "internship": "Software Developer Intern",
+  "status": "Active"
+});
+
+db.students.insertMany([
+  { "roll_no": 2, "name": "Bob", "age": 23, "marks": 50, "address": "456 Elm St, Pune", "internship": "", "status": "Active" },
+  { "roll_no": 3, "name": "Charlie", "age": 21, "marks": 90, "address": "789 Oak St, Pune", "internship": "Data Analyst Intern", "status": "Active" },
+  { "roll_no": 4, "name": "David", "age": 22, "marks": 40, "address": "101 Pine St, Pune", "internship": "", "status": "Active" },
+  { "roll_no": 5, "name": "Eve", "age": 23, "marks": 85, "address": "202 Maple St, Pune", "internship": "Web Developer Intern", "status": "Active" }
+]);
+
+// b) Update a document (update marks and address of Bob)
+db.students.updateOne(
+  { "roll_no": 2 },
+  { $set: { "marks": 55, "address": "789 Pine St, Pune" } }
+);
+
+// c) Insert the internship of a student (update Alice's internship)
+db.students.updateOne(
+  { "roll_no": 1 }, 
+  { $set: { "internship": "AI Research Intern" } }
+);
+
+// d) Update multiple documents (set internship for students with marks < 60)
+db.students.updateMany(
+  { "marks": { $lt: 60 } },
+  { $set: { "internship": "Internship Pending" } }
+);
+
+// e) Find students with marks < 60
+db.students.find({ "marks": { $lt: 60 } });
+
+// f) Print student names in ascending order
+db.students.find().sort({ "name": 1 });
+
+// g) Print the first 10 student info
+db.students.find().limit(10);

@@ -1,0 +1,64 @@
+// ------------------------------
+// Sample Data for Users Collection
+// ------------------------------
+use myAppDB;
+
+db.Users.insertMany([
+  { _id: 1, username: "jdoe", email: "jdoe@example.com", age: 25, registrationDate: new Date("2006-05-10"), address: "123 Elm St" },
+  { _id: 2, username: "alice", email: "alice@example.com", age: 22, registrationDate: new Date("2008-07-18"), address: "456 Oak St" },
+  { _id: 3, username: "bob", email: "bob@example.com", age: 17, registrationDate: new Date("2005-11-20"), address: "789 Pine St" },
+  { _id: 4, username: "Joe", email: "joe@example.com", age: 29, registrationDate: new Date("2004-12-15"), address: "101 Maple St" },
+  { _id: 5, username: "mike", email: "mike@example.com", age: 35, registrationDate: new Date("2010-02-22"), address: "202 Birch St" },
+  { _id: 6, username: "joe", email: "joe@example.net", age: 18, registrationDate: new Date("2006-08-11"), address: "303 Cedar St" }
+]);
+
+// ------------------------------
+// Sample Data for Food Collection
+// ------------------------------
+db.Food.insertMany([
+  { _id: 1, fruit: ["apple", "banana", "peach"] },
+  { _id: 2, fruit: ["apple", "kumquat", "orange"] },
+  { _id: 3, fruit: ["cherry", "banana", "apple"] }
+]);
+
+// ------------------------------
+// Queries on the Users Collection
+// ------------------------------
+
+// i. Find only "username" and "email" fields for all documents in Users
+db.Users.find({}, { username: 1, email: 1, _id: 0 });
+
+// ii. Find users who are between the ages of 18 and 30 inclusive
+db.Users.find({ age: { $gte: 18, $lte: 30 } });
+
+// iii. Find users who registered before January 1, 2007
+db.Users.find({ registrationDate: { $lt: new Date("2007-01-01") } });
+
+// iv. Find users with "user_id" equal to 12345 OR "username" equal to "joe"
+db.Users.find({ $or: [{ _id: 12345 }, { username: "joe" }] });
+
+// v. Find users with the name "Joe" or "joe" (case insensitive search)
+db.Users.find({ username: { $regex: /^joe$/i } });
+
+// ------------------------------
+// Queries on the Food Collection
+// ------------------------------
+
+// vi. Find documents with both "apple" and "banana" elements in the "fruit" array
+db.Food.find({ fruit: { $all: ["apple", "banana"] } });
+
+// ------------------------------
+// Additional Queries Demonstrating Various Techniques
+// ------------------------------
+
+// vii. Find a single user document by "_id" (using findOne)
+db.Users.findOne({ _id: 1 });
+
+// viii. Query for users with no email field (null type query)
+db.Users.find({ email: null });
+
+// ix. Find users with an address containing "St" using a regular expression
+db.Users.find({ address: { $regex: /St$/ } });
+
+// x. Find all users who have an age field that is not between 20 and 40 ($not with conditional)
+db.Users.find({ age: { $not: { $gte: 20, $lte: 40 } } });

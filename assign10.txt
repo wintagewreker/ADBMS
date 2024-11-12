@@ -1,0 +1,61 @@
+// Use groceryShop database
+use groceryShop
+
+// Create Products collection
+db.createCollection("products")
+
+// Create Sales collection
+db.createCollection("sales")
+
+// Create Customers collection
+db.createCollection("customers")
+
+
+db.products.insertMany([
+  { "_id": 1, "product_name": "Apple", "category": "Fruits", "price": 30 },
+  { "_id": 2, "product_name": "Banana", "category": "Fruits", "price": 15 },
+  { "_id": 3, "product_name": "Carrot", "category": "Vegetables", "price": 20 },
+  { "_id": 4, "product_name": "Cucumber", "category": "Vegetables", "price": 25 }
+])
+
+
+db.sales.insertMany([
+  { "sale_id": 1, "product_id": 1, "quantity": 5, "total": 150, "date": ISODate("2024-11-01T10:00:00Z"), "customer_id": 101 },
+  { "sale_id": 2, "product_id": 2, "quantity": 10, "total": 150, "date": ISODate("2024-11-02T11:00:00Z"), "customer_id": 102 },
+  { "sale_id": 3, "product_id": 3, "quantity": 7, "total": 140, "date": ISODate("2024-11-02T12:00:00Z"), "customer_id": 101 },
+  { "sale_id": 4, "product_id": 4, "quantity": 3, "total": 75, "date": ISODate("2024-11-03T13:00:00Z"), "customer_id": 103 }
+])
+
+
+
+db.customers.insertMany([
+  { "customer_id": 101, "name": "John Doe", "city": "Pune" },
+  { "customer_id": 102, "name": "Jane Smith", "city": "Mumbai" },
+  { "customer_id": 103, "name": "Sam Wilson", "city": "Pune" }
+])
+
+
+
+db.sales.aggregate([
+  {
+    $lookup: {
+      from: "products",        // Join products collection
+      localField: "product_id", // Join key from sales
+      foreignField: "_id",      // Join key from products
+      as: "product_details"     // Name for joined data
+    }
+  },
+  {
+    $unwind: "$product_details" // Flatten the array of product details
+  },
+  {
+    $group: {                  // Group by product name
+      _id: "$product_details.product_name", 
+      total_sales: { $sum: "$total" }, // Calculate total sales per product
+      quantity_sold: { $sum: "$quantity" } // Calculate total quantity sold
+    }
+  },
+  {
+    $sort: { total_sales: -1 }  // Sort by total sales in descending order
+  }
+])

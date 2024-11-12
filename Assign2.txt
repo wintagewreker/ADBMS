@@ -1,0 +1,72 @@
+// Switch to (or create) the LibraryDB database
+use LibraryDB;
+
+// ------------------------------
+// 1. Library Books Example
+// ------------------------------
+
+// Insert sample documents into the LibraryBooks collection
+db.LibraryBooks.insertMany([
+  { title: "Book A", pages: 150 },
+  { title: "Book B", pages: 300 },
+  { title: "Book C", pages: 200 },
+  { title: "Book D", pages: 400 },
+  { title: "Book E", pages: 100 }
+]);
+
+// Map function for LibraryBooks: classify books as less_than_250 or more_than_250 pages
+var mapFunctionBooks = function() {
+  if (this.pages < 250) {
+    emit("less_than_250", 1);
+  } else {
+    emit("more_than_250", 1);
+  }
+};
+
+// Reduce function for LibraryBooks: sum up the book counts in each category
+var reduceFunctionBooks = function(key, values) {
+  return Array.sum(values);
+};
+
+// Run MapReduce on LibraryBooks to count books based on page count
+db.LibraryBooks.mapReduce(
+  mapFunctionBooks,
+  reduceFunctionBooks,
+  { out: "BookPageCounts" }
+);
+
+// View results for Library Books example
+db.BookPageCounts.find();
+
+
+// ------------------------------
+// 2. Website Hits Example
+// ------------------------------
+
+// Insert sample documents into the WebsiteHits collection
+db.WebsiteHits.insertMany([
+  { hit_id: 1, url: "example.com" },
+  { hit_id: 2, url: "example.com" },
+  { hit_id: 3, url: "example.com" },
+  { hit_id: 4, url: "example.com" }
+]);
+
+// Map function for WebsiteHits: count each hit for the URL
+var mapFunctionHits = function() {
+  emit(this.url, 1);
+};
+
+// Reduce function for WebsiteHits: sum up the hits for each URL
+var reduceFunctionHits = function(key, values) {
+  return Array.sum(values);
+};
+
+// Run MapReduce on WebsiteHits to count total hits per URL
+db.WebsiteHits.mapReduce(
+  mapFunctionHits,
+  reduceFunctionHits,
+  { out: "TotalHits" }
+);
+
+// View results for Website Hits example
+db.TotalHits.find();
